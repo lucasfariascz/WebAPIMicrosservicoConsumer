@@ -3,21 +3,24 @@ using Microsoft.Azure.ServiceBus;
 using System.Text.Json;
 using WebAPIMicrosservico.Config.ServiceBus;
 using WebAPIMicrosservicoConsumer.Features.Services.Models;
+using WebAPIMicrosservicoConsumer.Services.Grpc;
 
 namespace WebAPIMicrosservicoConsumer.Features.Services
 {
     public class QueueConsumerService : IHostedService
     {
-        private readonly NoSQLDatabase<UserViewModel> noSQLDataBase;
         public string container = "WebAPIMicroConsumer";
+        private readonly NoSQLDatabase<UserViewModel> noSQLDataBase;
         static IQueueClient queueClient;
         private static readonly string QueueName = AppSettings.QueueName;
         private static readonly string AzureServiceBus = AppSettings.AzureServiceBus;
+        private readonly IContractWebAPIClient contractWebAPIClient;
 
-        public QueueConsumerService()
+        public QueueConsumerService(IContractWebAPIClient contractWebAPIClient)
         {
             noSQLDataBase = new();
             queueClient = new QueueClient(AzureServiceBus, QueueName);
+            this.contractWebAPIClient = contractWebAPIClient;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -52,6 +55,9 @@ namespace WebAPIMicrosservicoConsumer.Features.Services
             await this.noSQLDataBase.Add(container, userViewModel, userViewModel.Id.ToString());
 
             await queueClient.CompleteAsync(message.SystemProperties.LockToken);
+
+            // Send Message Client
+            await this.contractWebAPIClient.MessageGrpc(userViewModel);
         }
 
         private Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)

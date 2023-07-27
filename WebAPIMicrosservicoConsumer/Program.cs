@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Hosting;
 using WebAPIMicrosservicoConsumer.Features.Services;
+using WebAPIMicrosservicoConsumer.Services.Grpc;
 
 namespace WebAPIMicrosservicoConsumer
 {
@@ -9,9 +11,10 @@ namespace WebAPIMicrosservicoConsumer
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            Console.WriteLine("Service : AddControllers");
             builder.Services.AddControllers();
-            builder.Services.AddHostedService<QueueConsumerService>();
+
+            builder.Services.AddHostedService<QueueConsumerService>().AddTransient<IContractWebAPIClient, ContractWebAPIClient>();
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
